@@ -309,11 +309,39 @@ function getEpisodes(url, opts) { return getDetail(url, opts).then(function (d) 
 
 // ── Streams: server_ids → server list → server?get → embed getSources(New) ───
 function _parseServers(html) {
-  var servers = [], re = /data-type="(\w+)"([\s\S]*?)(?=data-type="|$)/g, tm;
-  while ((tm = re.exec(html)) !== null) {
-    var type = tm[1], block = tm[2], lm, lre = /data-link-id="([^"]+)"[^>]*>([^<]*)</g;
-    while ((lm = lre.exec(block)) !== null) {
-      servers.push({ type: type, linkId: lm[1], name: (lm[2] || '').trim() });
+  // Accept either quote style and arbitrary attribute order. AniKoto's server
+  // markup can vary between mirrors/templates; a brittle data-type-first
+  // regex silently drops every server after a template change.
+  var servers = [], seen = {}, source = String(html || '');
+  var re = /<[^>]*\bdata-link-id\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/[^>]+>/gi, m;
+  while ((m = re.exec(source)) !== null) {
+    var tag = m[0], id = m[1];
+    var typeMatch = tag.match(/\bdata-type\s*=\s*["'](\w+)["']/i);
+    if (!typeMatch) {
+      var before = source.slice(0, m.index);
+      var types = /\bdata-type\s*=\s*["'](\w+)["']/gi, tm, last = null;
+      while ((tm = types.exec(before)) !== null) last = tm[1];
+      if (!last) continue;
+      typeMatch = [null, last];
+    }
+    var name = m[2].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    var key = typeMatch[1] + '\\n' + id + '\\n' + name;
+    if (seen[key]) continue;
+    seen[key] = true;
+    servers.push({ type: typeMatch[1].toLowerCase(), linkId: id, name: name });
+  }
+  // Fallback for the common nested server-group shape: the data-type belongs
+  // to the parent group, not the link element itself.
+  if (!servers.length) {
+    var groups = /data-type\s*=\s*["'](\w+)["']([\s\S]*?)(?=data-type\s*=\s*["']|$)/gi, g;
+    while ((g = groups.exec(source)) !== null) {
+      var links = /data-link-id\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/[^>]+>/gi, l;
+      while ((l = links.exec(g[2])) !== null) {
+        var label = l[2].replace(/<[^>]*>/g, '').trim();
+        servers.push({ type: g[1].toLowerCase(), linkId: l[1], name: label });
+      }
     }
   }
   return servers;
