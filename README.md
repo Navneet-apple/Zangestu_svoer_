@@ -1,60 +1,41 @@
 # Zangestu_svoer_
 
-Independent, rights-first provider repository for [Zangetsu](https://github.com/Spyou/Zangetsu).
+Extra provider sources for [Zangetsu](https://github.com/Spyou/Zangetsu).
 
-## Status
+## Available source
 
-This is a starter repository with a validated Zangetsu manifest, a provider-contract template, automated manifest tests, and a policy for reviewing sources before adding them.
+- **AniKoto** — anime catalogue, episode list, sub/dub selection, and stream resolution. Provider version: `0.2.9`.
 
-**AniKoto is not enabled in this starter build.** The existence of a provider in another repository does not establish that its streams are licensed for redistribution or that the site authorizes third-party extraction. Add it only after confirming you have permission or a clearly authorized API/streaming route. This repository intentionally does not copy stream-extraction code or bypass access controls.
+Availability depends on the external website, its servers, and Zangetsu's current runtime. This provider has upstream offline contract tests, but this repository's commit has **not** been live-tested on your phone or TV. A provider cannot guarantee that every title or stream will work.
 
-## Layout
-
-```text
-.
-├── index.json
-├── README.md
-├── LICENSE
-├── .gitignore
-├── providers/
-│   └── provider-template.js
-└── tests/
-    └── validate_manifest.py
-```
-
-## Add this repository to Zangetsu
+## Install
 
 1. Open **Settings → Sources → Add repo** in Zangetsu.
 2. Add this manifest URL:
 
    `https://raw.githubusercontent.com/Navneet-apple/Zangestu_svoer_/main/index.json`
 
-3. Install only sources you have reviewed and trust.
+3. Refresh the repository and install **AniKoto**.
 
-## Provider integration policy
+## Attribution and licensing
 
-A source can be added when at least one of these applies:
+The AniKoto adapter is derived from the Apache-2.0-licensed `Serenity-MIST/zangetsu-sources` provider bundle, which credits the Yuzono anime-extensions project. The local source ID was adapted for this repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSE-APACHE-2.0](LICENSE-APACHE-2.0).
 
-- The source owner explicitly permits the intended integration.
-- The content is public domain or appropriately licensed, and the provider respects the license and attribution terms.
-- An official API or partner feed grants the required access.
+The repository's own scaffolding remains under the MIT License in [LICENSE](LICENSE). The provider's code license does **not** grant rights to any website, logo, metadata, or media. Use the source only where access and viewing are lawful in your location, and respect the website's terms.
 
-Do not add providers that bypass paywalls, DRM, authentication, anti-bot protections, or other access controls. Do not redistribute stream URLs, keys, or copied provider code without permission. Respect robots.txt, rate limits, privacy, and applicable law.
+## Layout
 
-## Implementing a provider
+- `index.json` — source manifest
+- `providers/anikoto.js` — installable AniKoto provider
+- `tests/validate_manifest.py` — manifest/path checks
+- `tests/anikoto-smoke.js` — provider contract smoke test
+- `THIRD_PARTY_NOTICES.md` and `LICENSE-APACHE-2.0` — upstream attribution and license
 
-`providers/provider-template.js` documents the expected high-level functions used by provider scripts in the Zangetsu ecosystem (`getInfo`, `search`, `getDetail`, `getEpisodes`, and `getVideoSources`). It is deliberately not listed in `index.json`, because it is a template and does not fetch or play media.
+## Tests
 
-Before listing a real provider, verify the current provider contract against the Zangetsu app and test the source end-to-end. The manifest validator checks repository structure only; it does not certify that a provider works or that a source is licensed.
-
-## Run tests
-
-Requires Python 3.9+.
+Requires Python 3.9+ and Node.js:
 
 ```sh
 python tests/validate_manifest.py
+node tests/anikoto-smoke.js
 ```
-
-## License
-
-Repository scaffolding and template code are provided under the MIT License. This license does not grant rights to third-party websites, logos, metadata, or media.
