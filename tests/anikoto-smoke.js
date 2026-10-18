@@ -9,9 +9,9 @@ vm.createContext(context);
 vm.runInContext(code, context, { timeout: 5000 });
 
 const info = context.getInfo();
-assert.equal(info.name, 'AniKoto');
+assert.equal(info.name, 'AniKoto (Svoer)');
 assert.equal(info.type, 'anime');
-assert.equal(info.version, '0.2.9');
+assert.equal(info.version, '0.3.2');
 for (const fn of ['search', 'popular', 'getHome', 'getDetail', 'getEpisodes', 'getVideoSources', 'getSettings']) {
   assert.equal(typeof context[fn], 'function', fn + ' must be exposed');
 }
