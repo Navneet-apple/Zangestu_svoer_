@@ -1,5 +1,16 @@
 {
   "name": "Zangetsu Svoer Sources",
-  "description": "Independent Zangetsu providers; only reviewed and rights-respecting integrations are listed.",
-  "sources": []
+  "description": "Independent Zangetsu provider repository; includes the Apache-2.0 AniKoto adapter with third-party notices.",
+  "sources": [
+    {
+      "id": "anikoto",
+      "name": "AniKoto",
+      "version": "0.2.9",
+      "type": "anime",
+      "lang": "en",
+      "file": "providers/anikoto.js",
+      "logo": "https://anikototv.to/favicon.ico",
+      "nsfw": false
+    }
+  ]
 }
