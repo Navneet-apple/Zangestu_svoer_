@@ -11,7 +11,7 @@ vm.runInContext(code, context, { timeout: 5000 });
 const info = context.getInfo();
 assert.equal(info.name, 'AniKoto (Svoer)');
 assert.equal(info.type, 'anime');
-assert.equal(info.version, '0.3.7');
+assert.equal(info.version, '0.3.8');
 for (const fn of ['search', 'popular', 'getHome', 'getDetail', 'getEpisodes', 'getVideoSources', 'getSettings']) {
   assert.equal(typeof context[fn], 'function', fn + ' must be exposed');
 }
@@ -44,6 +44,18 @@ async function testAllMirrorsAreAttempted() {
   assert.equal(sources.length, 3, 'all valid mirror hosts should survive; a failed mirror must not stop later mirrors');
   assert.ok(sources.some((s) => s.url.includes('vidstream.example')));
   assert.ok(sources.some((s) => s.url.includes('rotating-mirror.example')));
+
+  const categories = [];
+  context._extractPlayer = async (url, category, name) => {
+    categories.push(category + ':' + name);
+    return [{ url: url + '/master.m3u8', label: name + ' · ' + category, kind: category }];
+  };
+  const mixed = await context._tryServersAll([
+    { linkId: 'hd', name: 'HD-1', type: 'sub' },
+    { linkId: 'vidstream', name: 'Vidstream-2', type: 'dub' }
+  ], 0, 'sub', []);
+  assert.deepEqual(categories, ['sub:HD-1', 'dub:Vidstream-2']);
+  assert.equal(mixed.length, 2, 'sub and dub cuts must both be returned');
 
   const sameUrl = 'https://cdn.example/shared.m3u8';
   const visible = context._dedupeVideoSources([
