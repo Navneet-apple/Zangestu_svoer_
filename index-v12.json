@@ -4,8 +4,8 @@
   "sources": [
     {
       "id": "anikoto-svoer-v12",
-      "name": "AniKoto (Svoer) v0.3.12",
-      "version": "0.3.12",
+      "name": "AniKoto (Svoer) v0.3.13",
+      "version": "0.3.13",
       "type": "anime",
       "lang": "en",
       "file": "providers/anikoto.js",
