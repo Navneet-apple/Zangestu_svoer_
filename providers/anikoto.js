@@ -38,7 +38,7 @@ var MAPPER = 'https://mapper.nekostream.site/api/mal/';
 
 function getInfo() {
   return { name: 'AniKoto (Svoer)', lang: 'en', baseUrl: SITE,
-    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.7' };
+    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.8' };
 }
 
 // MegaPlay/VidWish: getSourcesNew is the endpoint their player hits; both routes
@@ -358,14 +358,13 @@ function getVideoSources(episodeUrl) {
   return _ajax('/ajax/server/list?servers=' + encodeURIComponent(serverIds)).then(function (j) {
     var lhtml = (j && typeof j.result === 'string') ? j.result : '';
     var servers = _parseServers(lhtml);
-    var want = [];
-    for (var i = 0; i < servers.length; i++) {
-      var s = servers[i];
-      var ok = (cat === 'dub') ? (s.type === 'dub') : (s.type === 'sub' || s.type === 'hsub');
-      if (ok) want.push(s);
-    }
-    if (!want.length) want = servers;
-    want.sort(function (a, b) { return _srvRank(a.name) - _srvRank(b.name); });
+    // Keep all listed sub/dub server cuts available in the source picker.
+    var want = servers.slice();
+    want.sort(function (a, b) {
+      var rank = _srvRank(a.name) - _srvRank(b.name);
+      if (rank) return rank;
+      return (a.type || '').localeCompare(b.type || '');
+    });
     return _tryServersAll(want, 0, cat, []).then(function (found) {
       return _mapperServersAll(token, cat).then(function (extra) {
         var all = _dedupeVideoSources(found.concat(extra));
