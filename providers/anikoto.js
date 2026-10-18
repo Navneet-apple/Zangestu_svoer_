@@ -350,11 +350,24 @@ function getVideoSources(episodeUrl) {
     }
     if (!want.length) want = servers;
     want.sort(function (a, b) { return _srvRank(a.name) - _srvRank(b.name); });
-    return _tryServers(want, 0, cat);
+    return _tryServersAll(want, 0, cat, []).then(function (found) {
+      return _mapperServersAll(token, cat).then(function (extra) {
+        var all = found.concat(extra), seen = {};
+        all = all.filter(function (s) {
+          var k = String(s.url || '');
+          if (!k || seen[k]) return false;
+          seen[k] = true;
+          return true;
+        });
+        if (all.length) return all;
+        throw new Error('AniKoto: no playable server');
+      });
+    });
   }).catch(function (err) {
-    // Only once the episode's own servers are exhausted — VidPlay is a direct
-    // m3u8 and one request cheaper, so it stays first.
-    return _mapperServers(token, cat, err);
+    return _mapperServersAll(token, cat).then(function (extra) {
+      if (extra.length) return extra;
+      throw err;
+    });
   });
 }
 
@@ -390,13 +403,29 @@ function _mapperServers(token, cat, err) {
 // Resolve servers in preference order; take the first that yields a known embed
 // host, then extract its m3u8. A host that no longer returns a plain file (see
 // PLAYER_RE) just throws and we fall through to the next server.
-function _tryServers(list, i, cat) {
-  if (i >= list.length) return Promise.reject(new Error('AniKoto: no playable server'));
-  return _ajax('/ajax/server?get=' + encodeURIComponent(list[i].linkId)).then(function (j) {
+function _tryServersAll(list, i, cat, found) {
+  if (i >= list.length) return Promise.resolve(found);
+  var server = list[i];
+  return _ajax('/ajax/server?get=' + encodeURIComponent(server.linkId)).then(function (j) {
     var url = j && j.result && (typeof j.result === 'object' ? j.result.url : null);
-    if (url && PLAYER_RE.test(url)) return _extractPlayer(url, cat);
-    return _tryServers(list, i + 1, cat);
-  }).catch(function () { return _tryServers(list, i + 1, cat); });
+    if (!url || !PLAYER_RE.test(url)) return [];
+    return _extractPlayer(url, cat, server.name);
+  }).catch(function () { return []; }).then(function (streams) {
+    return _tryServersAll(list, i + 1, cat, found.concat(streams || []));
+  });
+}
+function _mapperServersAll(token, cat) {
+  if (!token) return Promise.resolve([]);
+  return _json(MAPPER + token, SITE + '/').then(function (j) {
+    var extra = [];
+    for (var name in (j || {})) {
+      var e = j[name];
+      if (name === 'status' || !e || typeof e !== 'object') continue;
+      var bucket = e[cat];
+      if (bucket && bucket.url) extra.push({ type: cat, linkId: String(bucket.url), name: name });
+    }
+    return _tryServersAll(extra, 0, cat, []);
+  }).catch(function () { return []; });
 }
 
 // Embed page → data-id → getSources(New) (plain m3u8 + subtitle tracks).
@@ -443,7 +472,7 @@ function _packSkew(playing, sibling) {
   return { seconds: skew, afterSeconds: after == null ? 0 : after };
 }
 
-function _extractPlayer(embed, cat) {
+function _extractPlayer(embed, cat, serverName) {
   var base = (embed.match(/^(https?:\/\/[^/]+)/) || [])[1] || 'https://vidtube.site';
   // Sources are keyed by the embed's data-id, which is shared across the
   // sub/hsub/dub cuts — the audio comes from `type`, so carry over the one this
@@ -474,7 +503,7 @@ function _extractPlayer(embed, cat) {
 
       function finish(skew) {
         var mk = function (u, q) {
-          var o = { url: u, quality: q, container: /\.m3u8(\?|$)/i.test(u) ? 'hls' : 'mp4',
+          var o = { url: u, label: (serverName || 'AniKoto') + ' · ' + cat, quality: q, container: /\.m3u8(\?|$)/i.test(u) ? 'hls' : 'mp4',
             headers: hdrs, kind: cat, audioLang: cat === 'dub' ? 'en' : 'ja', subtitles: subs };
           if (skew) {
             o.subtitleSkewSeconds = skew.seconds;
