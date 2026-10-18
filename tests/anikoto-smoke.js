@@ -11,7 +11,7 @@ vm.runInContext(code, context, { timeout: 5000 });
 const info = context.getInfo();
 assert.equal(info.name, 'AniKoto (Svoer)');
 assert.equal(info.type, 'anime');
-assert.equal(info.version, '0.3.6');
+assert.equal(info.version, '0.3.7');
 for (const fn of ['search', 'popular', 'getHome', 'getDetail', 'getEpisodes', 'getVideoSources', 'getSettings']) {
   assert.equal(typeof context[fn], 'function', fn + ' must be exposed');
 }
@@ -44,6 +44,15 @@ async function testAllMirrorsAreAttempted() {
   assert.equal(sources.length, 3, 'all valid mirror hosts should survive; a failed mirror must not stop later mirrors');
   assert.ok(sources.some((s) => s.url.includes('vidstream.example')));
   assert.ok(sources.some((s) => s.url.includes('rotating-mirror.example')));
+
+  const sameUrl = 'https://cdn.example/shared.m3u8';
+  const visible = context._dedupeVideoSources([
+    { url: sameUrl, label: 'HD-1 · sub', kind: 'sub' },
+    { url: sameUrl, label: 'Vidstream-1 · sub', kind: 'sub' },
+    { url: sameUrl, label: 'HD-1 · sub', kind: 'sub' }
+  ]);
+  assert.equal(visible.length, 2, 'same URL from different servers must remain visible, exact duplicates must be removed');
+  assert.ok(visible.some((s) => s.label.startsWith('Vidstream-1')));
 }
 
 testAllMirrorsAreAttempted().then(() => {
