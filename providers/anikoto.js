@@ -38,7 +38,7 @@ var MAPPER = 'https://mapper.nekostream.site/api/mal/';
 
 function getInfo() {
   return { name: 'AniKoto (Svoer)', lang: 'en', baseUrl: SITE,
-    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.3' };
+    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.4' };
 }
 
 // MegaPlay/VidWish: getSourcesNew is the endpoint their player hits; both routes
@@ -335,8 +335,11 @@ function getVideoSources(episodeUrl) {
   var serverIds = parts[1] ? decodeURIComponent(parts[1]) : '';
   // <mal>/<ep>/<timestamp>, already url-safe from _epUrl. Absent on urls saved
   // before the token existed, which just means no mapper fallback for them.
-  var token = (parts[4] && parts[5] && parts[6])
-    ? (parts[4] + '/' + parts[5] + '/' + parts[6]) : null;
+  // _epUrl appends the mapper token AFTER the episode number:
+  // anikoto://<cat>/<serverIds>/<subdub>/<num>/<mal>/<epSlug>/<timestamp>
+  // parts[4] is the episode number, so the token starts at parts[5].
+  var token = (parts[5] && parts[6] && parts[7])
+    ? (parts[5] + '/' + parts[6] + '/' + parts[7]) : null;
   if (!serverIds) return Promise.reject(new Error('AniKoto: no server ids'));
 
   return _ajax('/ajax/server/list?servers=' + encodeURIComponent(serverIds)).then(function (j) {
