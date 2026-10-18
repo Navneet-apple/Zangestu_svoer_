@@ -416,7 +416,7 @@ function _tryServersAll(list, i, cat, found) {
     // Do not whitelist embed domains here. AniKoto can return rotating mirror
     // hosts (including Vidstream aliases); let the extractor validate the
     // player page and stream response instead of silently dropping the host.
-    if (!url || !/^https?:\\/\\//i.test(url)) return found;
+    if (!url || !/^https?:\/\//i.test(url)) return found;
     return _extractPlayer(url, cat, server.name).then(function (group) {
       return found.concat(group || []);
     });
