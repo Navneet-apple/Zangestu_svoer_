@@ -526,8 +526,8 @@ function _extractPlayer(embed, cat, serverName) {
       function finish(skew) {
         var mk = function (u, q) {
           var displayServer = String(serverName || 'AniKoto')
-            .replace(/\\s+/g, ' ')
-            .replace(/\\s*-\\s*/g, ' - ')
+            .replace(/\s+/g, ' ')
+            .replace(/\s*-\s*/g, ' - ')
             .trim();
           var o = { url: u, label: displayServer + ' · ' + cat, quality: q, container: /\.m3u8(\?|$)/i.test(u) ? 'hls' : 'mp4',
             headers: hdrs, kind: cat, audioLang: cat === 'dub' ? 'en' : 'ja', subtitles: subs };
