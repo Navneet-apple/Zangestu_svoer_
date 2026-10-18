@@ -1,11 +1,11 @@
 {
-  "name": "Zangetsu Svoer Sources v0.3.12",
-  "description": "Fresh manifest URL for AniKoto (Svoer) v0.3.12; use this if the previous repository entry is stuck on cached metadata.",
+  "name": "Zangetsu Svoer Sources v0.3.14",
+  "description": "Fresh manifest URL for AniKoto (Svoer) v0.3.14; use this if the previous repository entry is stuck on cached metadata.",
   "sources": [
     {
       "id": "anikoto-svoer-v12",
-      "name": "AniKoto (Svoer) v0.3.13",
-      "version": "0.3.13",
+      "name": "AniKoto (Svoer) v0.3.14",
+      "version": "0.3.14",
       "type": "anime",
       "lang": "en",
       "file": "providers/anikoto.js",
