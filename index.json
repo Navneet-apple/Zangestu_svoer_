@@ -5,10 +5,20 @@
     {
       "id": "anikoto-svoer",
       "name": "AniKoto (Svoer)",
-      "version": "0.3.11",
+      "version": "0.3.12",
       "type": "anime",
       "lang": "en",
       "file": "providers/anikoto.js",
+      "logo": "https://anikototv.to/favicon.ico",
+      "nsfw": false
+    },
+    {
+      "id": "anikoto-svoer-v2",
+      "name": "AniKoto (Svoer) — Fresh Install",
+      "version": "0.3.12",
+      "type": "anime",
+      "lang": "en",
+      "file": "https://raw.githubusercontent.com/Navneet-apple/Zangestu_svoer_/main/providers/anikoto.js",
       "logo": "https://anikototv.to/favicon.ico",
       "nsfw": false
     }
