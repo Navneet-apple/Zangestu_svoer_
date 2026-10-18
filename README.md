@@ -4,7 +4,7 @@ Extra provider sources for [Zangetsu](https://github.com/Spyou/Zangetsu).
 
 ## Available source
 
-- **AniKoto (Svoer)** — anime catalogue, episode list, sub/dub selection, and multi-server stream resolution. Provider version: `0.3.11`.
+- **AniKoto (Svoer)** — anime catalogue, episode list, sub/dub selection, and multi-server stream resolution. Provider version: `0.3.12`.
 
 Availability depends on the external website, its servers, and Zangetsu's current runtime. This provider has upstream offline contract tests, but this repository's commit has **not** been live-tested on your phone or TV. A provider cannot guarantee that every title or stream will work.
 
@@ -39,3 +39,6 @@ Requires Python 3.9+ and Node.js:
 python tests/validate_manifest.py
 node tests/anikoto-smoke.js
 ```
+
+
+Recovery entry: if an existing installation does not show the provider update because its repository origin differs, install **AniKoto (Svoer) — Fresh Install** from the same manifest, then remove the older AniKoto (Svoer) entry after verifying playback.
