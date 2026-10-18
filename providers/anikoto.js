@@ -309,14 +309,78 @@ function getEpisodes(url, opts) { return getDetail(url, opts).then(function (d) 
 
 // ── Streams: server_ids → server list → server?get → embed getSources(New) ───
 function _parseServers(html) {
-  // Keep the same parsing behavior as the upstream provider. The newer
-  // group-regex parser incorrectly treated nested/group markup as a boundary
-  // and regressed the working four-entry result.
-  var servers = [], re = /data-type="(\w+)"([\s\S]*?)(?=data-type="|$)/g, tm;
-  while ((tm = re.exec(html)) !== null) {
-    var type = tm[1], block = tm[2], lm, lre = /data-link-id="([^"]+)"[^>]*>([^<]*)</g;
-    while ((lm = lre.exec(block)) !== null) {
-      servers.push({ type: type, linkId: lm[1], name: (lm[2] || '').trim() });
+  // Match the upstream DOM strategy: server LI nodes inherit sub/dub type
+  // from the nearest ancestor group. Also accept data-link-id on nested links.
+  var source = String(html || ''), servers = [], seen = {};
+  var tagRe = /<\/?([a-z][a-z0-9:-]*)\b([^>]*)>/gi;
+  var stack = [], match;
+  function attr(attrs, name) {
+    var re = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g, m;
+    while ((m = re.exec(attrs || '')) !== null) {
+      if (m[1].toLowerCase() === name.toLowerCase()) return m[2] !== undefined ? m[2] : m[3];
+    }
+    return '';
+  }
+  function visible(raw) {
+    return String(raw || '').replace(/<script\b[\s\S]*?<\/script\s*>/gi, '')
+      .replace(/<style\b[\s\S]*?<\/style\s*>/gi, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+  }
+  while ((match = tagRe.exec(source)) !== null) {
+    var full = match[0], tag = match[1].toLowerCase(), attrs = match[2] || '';
+    if (full.charAt(1) === '/') {
+      for (var si = stack.length - 1; si >= 0; si--) {
+        if (stack[si].tag === tag) { stack.length = si; break; }
+      }
+      continue;
+    }
+    var node = { tag: tag, attrs: attrs, start: match.index };
+    if (tag === 'li') {
+      var closeRe = /<\/li\s*>/ig;
+      closeRe.lastIndex = tagRe.lastIndex;
+      var close = closeRe.exec(source);
+      var inner = close ? source.slice(tagRe.lastIndex, close.index) : '';
+      var id = attr(attrs, 'data-link-id');
+      if (!id) id = attr(inner, 'data-link-id');
+      if (id && !/download-icon/i.test(attrs + ' ' + inner)) {
+        var type = attr(attrs, 'data-type');
+        if (!type) {
+          for (var ai = stack.length - 1; ai >= 0; ai--) {
+            type = attr(stack[ai].attrs, 'data-type') || attr(stack[ai].attrs, 'type');
+            if (type) break;
+          }
+        }
+        if (!type) {
+          var before = source.slice(0, match.index), types = /(?:data-type|type)\s*=\s*["'](sub|hsub|dub)["']/gi, tm, last = '';
+          while ((tm = types.exec(before)) !== null) last = tm[1];
+          type = last || 'sub';
+        }
+        type = String(type).toLowerCase();
+        if (type !== 'sub' && type !== 'hsub' && type !== 'dub') type = /dub/i.test(type) ? 'dub' : 'sub';
+        var name = visible(inner);
+        var key = [type, id, name].join('\n');
+        if (!seen[key]) {
+          seen[key] = true;
+          servers.push({ type: type, linkId: id, name: name || ('Server ' + id) });
+        }
+      }
+    }
+    if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(full)) stack.push(node);
+  }
+  // Fallback for templates without LI wrappers.
+  if (!servers.length) {
+    var groups = /data-type\s*=\s*["'](sub|hsub|dub)["']([\s\S]*?)(?=data-type\s*=\s*["'](?:sub|hsub|dub)["']|$)/gi, group;
+    while ((group = groups.exec(source)) !== null) {
+      var links = /data-link-id\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/[^>]+>/gi, link;
+      while ((link = links.exec(group[2])) !== null) {
+        var label = visible(link[2]), id = link[1], type = group[1].toLowerCase();
+        var key = [type, id, label].join('\n');
+        if (!seen[key]) { seen[key] = true; servers.push({ type: type, linkId: id, name: label || ('Server ' + id) }); }
+      }
     }
   }
   return servers;
