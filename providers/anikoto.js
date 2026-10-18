@@ -38,7 +38,7 @@ var MAPPER = 'https://mapper.nekostream.site/api/mal/';
 
 function getInfo() {
   return { name: 'AniKoto (Svoer)', lang: 'en', baseUrl: SITE,
-    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.10' };
+    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.11' };
 }
 
 // MegaPlay/VidWish: getSourcesNew is the endpoint their player hits; both routes
@@ -309,44 +309,14 @@ function getEpisodes(url, opts) { return getDetail(url, opts).then(function (d) 
 
 // ── Streams: server_ids → server list → server?get → embed getSources(New) ───
 function _parseServers(html) {
-  // Follow the same grouping rule as the community provider: each server link
-  // inherits the nearest preceding data-type group. Parse each group separately
-  // so a template/attribute-order change cannot silently lose HD or dub rows.
-  var source = String(html || ''), servers = [], seen = {};
-  var groups = /data-type\s*=\s*["'](\w+)["']([\s\S]*?)(?=data-type\s*=\s*["']\w+["']|$)/gi;
-  var group;
-  while ((group = groups.exec(source)) !== null) {
-    var type = String(group[1] || '').toLowerCase();
-    if (type !== 'sub' && type !== 'hsub' && type !== 'dub') continue;
-    var body = group[2], links = /data-link-id\s*=\s*["']([^"']+)["']/gi, link;
-    while ((link = links.exec(body)) !== null) {
-      var id = link[1];
-      var openStart = body.lastIndexOf('<', link.index);
-      var openEnd = body.indexOf('>', link.index);
-      if (openStart < 0 || openEnd < 0) continue;
-      var tag = body.slice(openStart, openEnd + 1);
-      // The link ID may live on the LI or on a nested anchor. Read the closest
-      // visible label, stopping at the matching anchor/list-item close.
-      var tail = body.slice(openEnd + 1);
-      var close = tail.match(/([\s\S]*?)<\/(?:a|li|button|div)\s*>/i);
-      var labelHtml = close ? close[1] : '';
-      if (/^<li\b/i.test(tag) && /<a\b/i.test(labelHtml)) {
-        var a = labelHtml.match(/<a\b[^>]*>([\s\S]*?)<\/a\s*>/i);
-        if (a) labelHtml = a[1];
-      }
-      var name = labelHtml.replace(/<[^>]*>/g, '')
-        .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-        .replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>').trim();
-      if (!name) {
-        // Fallback to text immediately following the link-id tag.
-        var simple = tail.match(/^\s*([^<]{1,100})</);
-        if (simple) name = simple[1].trim();
-      }
-      var key = [type, id, name].join('\n');
-      if (seen[key]) continue;
-      seen[key] = true;
-      servers.push({ type: type, linkId: id, name: name || ('Server ' + id) });
+  // Keep the same parsing behavior as the upstream provider. The newer
+  // group-regex parser incorrectly treated nested/group markup as a boundary
+  // and regressed the working four-entry result.
+  var servers = [], re = /data-type="(\w+)"([\s\S]*?)(?=data-type="|$)/g, tm;
+  while ((tm = re.exec(html)) !== null) {
+    var type = tm[1], block = tm[2], lm, lre = /data-link-id="([^"]+)"[^>]*>([^<]*)</g;
+    while ((lm = lre.exec(block)) !== null) {
+      servers.push({ type: type, linkId: lm[1], name: (lm[2] || '').trim() });
     }
   }
   return servers;
