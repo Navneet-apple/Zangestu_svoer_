@@ -3,9 +3,9 @@
   "description": "Independent Zangetsu provider repository; includes the Apache-2.0 AniKoto adapter with third-party notices.",
   "sources": [
     {
-      "id": "anikoto",
-      "name": "AniKoto",
-      "version": "0.3.0",
+      "id": "anikoto-svoer",
+      "name": "AniKoto (Svoer)",
+      "version": "0.3.1",
       "type": "anime",
       "lang": "en",
       "file": "providers/anikoto.js",
