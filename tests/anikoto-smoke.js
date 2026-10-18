@@ -23,6 +23,7 @@ async function testAllMirrorsAreAttempted() {
     return { result: { url: ({
       hd: 'https://megaplay.example/embed/1',
       vidstream: 'https://vidstream.example/embed/2',
+      broken: 'https://dead.example/embed/4',
       alias: 'https://rotating-mirror.example/embed/3'
     })[id] } };
   };
