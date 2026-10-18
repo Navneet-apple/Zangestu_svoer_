@@ -38,7 +38,7 @@ var MAPPER = 'https://mapper.nekostream.site/api/mal/';
 
 function getInfo() {
   return { name: 'AniKoto (Svoer)', lang: 'en', baseUrl: SITE,
-    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.6' };
+    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.7' };
 }
 
 // MegaPlay/VidWish: getSourcesNew is the endpoint their player hits; both routes
@@ -328,6 +328,20 @@ function _srvRank(name) {
   return 5;
 }
 
+// Keep distinct server entries even when mirrors redirect to the same URL.
+// URL-only deduplication hid servers such as Vidstream when their resolved
+// stream matched another server's URL. Only collapse identical source entries.
+function _dedupeVideoSources(sources) {
+  var seen = {};
+  return (sources || []).filter(function (s) {
+    if (!s || !s.url) return false;
+    var key = [s.url, s.label || '', s.kind || '', s.audioLang || ''].join('\\n');
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
 function getVideoSources(episodeUrl) {
   var raw = String(episodeUrl).replace('anikoto://', '');
   var parts = raw.split('/');
@@ -354,13 +368,7 @@ function getVideoSources(episodeUrl) {
     want.sort(function (a, b) { return _srvRank(a.name) - _srvRank(b.name); });
     return _tryServersAll(want, 0, cat, []).then(function (found) {
       return _mapperServersAll(token, cat).then(function (extra) {
-        var all = found.concat(extra), seen = {};
-        all = all.filter(function (s) {
-          var k = String(s.url || '');
-          if (!k || seen[k]) return false;
-          seen[k] = true;
-          return true;
-        });
+        var all = _dedupeVideoSources(found.concat(extra));
         if (all.length) return all;
         throw new Error('AniKoto: no playable server');
       });
