@@ -38,7 +38,7 @@ var MAPPER = 'https://mapper.nekostream.site/api/mal/';
 
 function getInfo() {
   return { name: 'AniKoto (Svoer)', lang: 'en', baseUrl: SITE,
-    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.5' };
+    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.6' };
 }
 
 // MegaPlay/VidWish: getSourcesNew is the endpoint their player hits; both routes
@@ -406,24 +406,28 @@ function _mapperServers(token, cat, err) {
 // host, then extract its m3u8. A host that no longer returns a plain file (see
 // PLAYER_RE) just throws and we fall through to the next server.
 function _tryServersAll(list, i, cat, found) {
-  // Resolve independent server links concurrently. Serial resolution lets a
-  // slow/dead mirror delay every later mirror and can hit the app's per-source
-  // timeout before the complete list is returned.
-  if (i === 0) {
-    return Promise.all((list || []).map(function (server) {
-      return _ajax('/ajax/server?get=' + encodeURIComponent(server.linkId)).then(function (j) {
-        var url = j && j.result && (typeof j.result === 'object' ? j.result.url : null);
-        if (!url || !PLAYER_RE.test(url)) return [];
-        return _extractPlayer(url, cat, server.name);
-      }).catch(function () { return []; });
-    })).then(function (groups) {
-      var out = [];
-      for (var n = 0; n < groups.length; n++) out = out.concat(groups[n] || []);
-      return out;
+  list = list || [];
+  found = found || [];
+  if (i >= list.length) return Promise.resolve(found);
+
+  var server = list[i];
+  return _ajax('/ajax/server?get=' + encodeURIComponent(server.linkId)).then(function (j) {
+    var url = j && j.result && (typeof j.result === 'object' ? j.result.url : null);
+    // Do not whitelist embed domains here. AniKoto can return rotating mirror
+    // hosts (including Vidstream aliases); let the extractor validate the
+    // player page and stream response instead of silently dropping the host.
+    if (!url || !/^https?:\\/\\//i.test(url)) return found;
+    return _extractPlayer(url, cat, server.name).then(function (group) {
+      return found.concat(group || []);
     });
-  }
-  // Keep the original helper signature compatible with existing callers.
-  return Promise.resolve(found || []);
+  }).catch(function () {
+    // One dead mirror must not prevent later servers from being attempted.
+    return found;
+  }).then(function (next) {
+    // Keep requests serial: parallel embed extraction can trigger host-side
+    // throttling and makes results less reliable on the app's HTTP client.
+    return _tryServersAll(list, i + 1, cat, next);
+  });
 }
 function _mapperServersAll(token, cat) {
   if (!token) return Promise.resolve([]);
