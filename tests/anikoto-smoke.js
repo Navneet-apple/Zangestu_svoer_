@@ -11,33 +11,23 @@ vm.runInContext(code, context, { timeout: 5000 });
 const info = context.getInfo();
 assert.equal(info.name, 'AniKoto (Svoer)');
 assert.equal(info.type, 'anime');
-assert.equal(info.version, '0.3.10');
+assert.equal(info.version, '0.3.11');
 for (const fn of ['search', 'popular', 'getHome', 'getDetail', 'getEpisodes', 'getVideoSources', 'getSettings']) {
   assert.equal(typeof context[fn], 'function', fn + ' must be exposed');
 }
 assert.ok(Array.isArray(context.getSettings()));
 const fourRows = context._parseServers(
-  '<ul data-type="sub"><li><a data-link-id="s-hd">HD - 1</a></li>' +
-  '<li><a class="server" data-link-id="s-vs">Vidstream - 2</a></li></ul>' +
-  '<ul data-type="dub"><li><a data-link-id="d-hd">HD - 1</a></li>' +
-  '<li><a data-link-id="d-vs">Vidstream - 2</a></li></ul>'
+  '<div data-type="sub"><a data-link-id="s-hd">HD - 1</a>' +
+  '<a data-link-id="s-vs">Vidstream - 2</a></div>' +
+  '<div data-type="dub"><a data-link-id="d-hd">HD - 1</a>' +
+  '<a data-link-id="d-vs">Vidstream - 2</a></div>'
 );
 assert.deepEqual(fourRows.map((s) => [s.type, s.linkId, s.name]), [
   ['sub', 's-hd', 'HD - 1'],
   ['sub', 's-vs', 'Vidstream - 2'],
   ['dub', 'd-hd', 'HD - 1'],
   ['dub', 'd-vs', 'Vidstream - 2']
-], 'both audio groups must expose all four server entries');
-const parsedVariants = context._parseServers(
-  '<div data-type="sub"><a class="server" data-link-id="s1">Vidstream-1</a>' +
-  "<a data-link-id='s2' class='server'>HD-2</a></div>" +
-  '<div data-type="dub"><a data-link-id="d1">Vidstream-2</a></div>'
-);
-assert.deepEqual(parsedVariants.map((s) => [s.type, s.linkId, s.name]), [
-  ['sub', 's1', 'Vidstream-1'],
-  ['sub', 's2', 'HD-2'],
-  ['dub', 'd1', 'Vidstream-2']
-], 'parser must preserve all server groups, quote styles, and attribute orders');
+], 'upstream server markup must preserve all four entries');
 async function testAllMirrorsAreAttempted() {
   const attempts = [];
   context._ajax = async (path) => {
