@@ -5,7 +5,7 @@
     {
       "id": "anikoto-svoer",
       "name": "AniKoto (Svoer)",
-      "version": "0.3.4",
+      "version": "0.3.5",
       "type": "anime",
       "lang": "en",
       "file": "providers/anikoto.js",
