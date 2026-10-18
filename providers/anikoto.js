@@ -418,13 +418,14 @@ function _tryServersAll(list, i, cat, found) {
   if (i >= list.length) return Promise.resolve(found);
 
   var server = list[i];
+  var serverCat = server.type === 'dub' ? 'dub' : (server.type === 'hsub' ? 'hsub' : 'sub');
   return _ajax('/ajax/server?get=' + encodeURIComponent(server.linkId)).then(function (j) {
     var url = j && j.result && (typeof j.result === 'object' ? j.result.url : null);
     // Do not whitelist embed domains here. AniKoto can return rotating mirror
     // hosts (including Vidstream aliases); let the extractor validate the
     // player page and stream response instead of silently dropping the host.
     if (!url || !/^https?:\/\//i.test(url)) return found;
-    return _extractPlayer(url, cat, server.name).then(function (group) {
+    return _extractPlayer(url, serverCat, server.name).then(function (group) {
       return found.concat(group || []);
     });
   }).catch(function () {
