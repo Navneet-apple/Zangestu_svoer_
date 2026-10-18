@@ -4,7 +4,7 @@ Extra provider sources for [Zangetsu](https://github.com/Spyou/Zangetsu).
 
 ## Available source
 
-- **AniKoto (Svoer)** — anime catalogue, episode list, sub/dub selection, and multi-server stream resolution. Provider version: `0.3.9`.
+- **AniKoto (Svoer)** — anime catalogue, episode list, sub/dub selection, and multi-server stream resolution. Provider version: `0.3.10`.
 
 Availability depends on the external website, its servers, and Zangetsu's current runtime. This provider has upstream offline contract tests, but this repository's commit has **not** been live-tested on your phone or TV. A provider cannot guarantee that every title or stream will work.
 
