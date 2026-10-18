@@ -241,9 +241,11 @@ async function getVideoSources(episodeUrl){
   var ref=SITE+ep.epurl,data=await request(SITE+'/ajax/server/list?servers='+encodeURIComponent(ep.ids),ref,true);
   var markup=typeof data.result==='string'?data.result:data.result&&data.result.html;if(typeof markup!=='string')throw new Error('Invalid server list');
   var servers=serverNodes(markup),out=[],failures=[];
-  // Resolve a bounded set, two at a time; one dead mirror must not freeze the app.
-  var candidates=servers.filter(function(s){return !/kiwi|vidplay/i.test(s.name)&&(setting('audio')==='both'||s.kind===setting('audio'));}).slice(0,6);
-  for(var i=0;i<candidates.length;i+=2){var batch=await Promise.all(candidates.slice(i,i+2).map(async function(s){try{var r=await request(SITE+'/ajax/server?get='+encodeURIComponent(s.id),ref,true);if(!r.result||!r.result.url)throw new Error('Missing embed URL');return await resolveEmbed(r.result.url,s,ref,0);}catch(e){failures.push(s.name+': '+e.message);return [];}}));batch.forEach(function(v){out=out.concat(v);});if(out.length&&(setting('audio')!=='both'||(out.some(function(v){return v.kind==='sub';})&&out.some(function(v){return v.kind==='dub';}))))break;}
+  // Resolve every compatible server in small batches. Do not stop after the
+  // first playable sub/dub result: the player picker should expose all servers
+  // that this runtime can resolve. Proxy-only hosts remain excluded by design.
+  var candidates=servers.filter(function(s){return !/kiwi|vidplay/i.test(s.name)&&(setting('audio')==='both'||s.kind===setting('audio'));});
+  for(var i=0;i<candidates.length;i+=2){var batch=await Promise.all(candidates.slice(i,i+2).map(async function(s){try{var r=await request(SITE+'/ajax/server?get='+encodeURIComponent(s.id),ref,true);if(!r.result||!r.result.url)throw new Error('Missing embed URL');return await resolveEmbed(r.result.url,s,ref,0);}catch(e){failures.push(s.name+': '+e.message);return [];}}));batch.forEach(function(v){out=out.concat(v);});}
   if(!out.length)throw new Error(NAME+': no supported direct servers. '+(failures.join('; ')||'Available hosts require the Android proxy.'));
   return audioMetadata(unique(out,function(v){return v.url+'|'+v.kind;}));
 }
