@@ -38,7 +38,7 @@ var MAPPER = 'https://mapper.nekostream.site/api/mal/';
 
 function getInfo() {
   return { name: 'AniKoto (Svoer)', lang: 'en', baseUrl: SITE,
-    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.8' };
+    logo: SITE + '/favicon.ico', type: 'anime', version: '0.3.9' };
 }
 
 // MegaPlay/VidWish: getSourcesNew is the endpoint their player hits; both routes
